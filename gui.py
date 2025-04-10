@@ -9,8 +9,13 @@ class Game2048GUI:
         self.master.title("2048")
         self.board = init_board()
         self.history = []
-        self.score = 0
+        self.score = self.compute_score(self.board)
+        self.score_label = tk.Label(self.master, text=f"Score: {self.score}", font=("Helvetica", 20), bg="azure3")
+        self.score_label.pack(pady=10)
+        self.board_frame = tk.Frame(self.master, bg="azure3")
+        self.board_frame.pack(pady=10)
         self.grid_cells = []
+        self.over_frame = None
         self.setup_GUI()
         self.update_GUI()
         # Enlaza las teclas de dirección para mover el juego.
@@ -18,8 +23,10 @@ class Game2048GUI:
 
     def setup_GUI(self):
         """Configura la ventana y crea la cuadrícula de celdas."""
-        background = tk.Frame(self.master, bg='azure3', bd=3, relief="sunken")
-        background.grid(padx=10, pady=10)
+        background = tk.Frame(self.board_frame, bg='azure3', bd=3, relief="sunken")
+        background.grid(row =0, column=0, padx=10, pady=10)
+        score_frame = tk.Frame(self.master)
+        score_frame.pack(pady=5)
         for i in range(BOARD_SIZE):
             row = []
             for j in range(BOARD_SIZE):
@@ -41,6 +48,8 @@ class Game2048GUI:
                 color = TILE_COLORS.get(value, "orange") if value != 0 else TILE_COLORS.get(0, "azure4")
                 text = str(value) if value != 0 else ""
                 self.grid_cells[i][j].configure(text=text, bg=color)
+        self.score = self.compute_score(self.board)
+        self.score_label.configure(text=f"Score: {self.score}")
         self.master.update_idletasks()
 
     def key_handler(self, event):
@@ -50,6 +59,9 @@ class Game2048GUI:
         if key.lower() == "u":
             if self.history:
                 self.board = self.history.pop()
+                if self.over_frame is not None:
+                    self.over_frame.destroy()
+                    self.over_frame = None
                 self.update_GUI()
             return
         
@@ -78,7 +90,16 @@ class Game2048GUI:
 
     def game_over(self):
         """Muestra un mensaje de 'Game Over' en pantalla."""
-        over_frame = tk.Frame(self.master, borderwidth=2)
-        over_frame.place(relx=0.5, rely=0.5, anchor="center")
-        tk.Label(over_frame, text="¡Game Over!", font=("Helvetica", 30, "bold"),
+        # Si ya existe un mensaje de game over, no hace nada.
+        if self.over_frame is not None:
+            return
+        self.over_frame = tk.Frame(self.master, borderwidth=2)
+        self.over_frame.place(relx=0.5, rely=0.5, anchor="center")
+        tk.Label(self.over_frame, text="¡Game Over!", font=("Helvetica", 30, "bold"),
                  bg="red", fg="white").pack()
+
+
+        
+    def compute_score(self, board):
+        """Calcula el puntaje total del tablero sumando todos los valores."""
+        return sum(sum(row) for row in board)
